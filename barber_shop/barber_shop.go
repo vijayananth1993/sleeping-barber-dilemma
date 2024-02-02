@@ -3,23 +3,23 @@ package barber_shop
 import (
 	"fmt"
 	"sleeping-barber-dilemma/customer"
-	"sync"
+	"sync/atomic"
 )
 
 type BarberShop struct {
-	wg              sync.WaitGroup
-	waitingRoom     chan customer.Customer
-	numberOfBarbers int
-	barbers         []Barber
-	isShopClosed    bool
+	waitingRoom         chan customer.Customer
+	numberOfBarbers     int
+	barbers             []Barber
+	isShopClosed        int32
+	barberReturningHome chan bool
 }
 
 func NewBarberShop(numberOfSeats int, numberOfBarbers int) BarberShop {
 	return BarberShop{
-		wg:              sync.WaitGroup{},
-		waitingRoom:     make(chan customer.Customer, numberOfSeats),
-		numberOfBarbers: numberOfBarbers,
-		barbers:         make([]Barber, numberOfBarbers),
+		waitingRoom:         make(chan customer.Customer, numberOfSeats),
+		numberOfBarbers:     numberOfBarbers,
+		barbers:             make([]Barber, numberOfBarbers),
+		barberReturningHome: make(chan bool, numberOfBarbers),
 	}
 }
 
@@ -28,23 +28,24 @@ func (bs *BarberShop) Open() {
 		b := NewBarber(i, bs)
 		bs.barbers[i-1] = b
 		go b.Work()
-		bs.wg.Add(1)
 	}
 }
 
 func (bs *BarberShop) Close() {
 	fmt.Println("Barbershop is closing now.")
 	close(bs.waitingRoom)
-	bs.isShopClosed = true
+	atomic.AddInt32(&bs.isShopClosed, int32(1))
 	fmt.Println("Barbershop is closed")
 }
 
 func (bs *BarberShop) IsShopClose() bool {
-	return bs.isShopClosed
+	return atomic.LoadInt32(&bs.isShopClosed) != 0
 }
 
 func (bs *BarberShop) WaitTillAllBarberReturnsHome() {
-	bs.wg.Wait()
+	for i := 0; i < bs.numberOfBarbers; i++ {
+		<-bs.barberReturningHome
+	}
 	fmt.Println("Barbershop is closed, haircut completed for all customers and all barbers have gone home.")
 }
 
@@ -52,16 +53,14 @@ func (bs *BarberShop) CustomerVisit(customer customer.Customer) {
 	fmt.Printf("Customer %d entered barber shop\n", customer.GetCustomerId())
 	select {
 	case bs.waitingRoom <- customer:
-		bs.wg.Add(1)
 		customer.WaitForHaircutToBeCompleted()
-		bs.wg.Done()
 	default:
 		fmt.Printf("Customer %d left without a haircut as the waiting room is full\n", customer.GetCustomerId())
 	}
 }
 
 func (bs *BarberShop) BarberReturnsToHome() {
-	bs.wg.Done()
+	bs.barberReturningHome <- true
 }
 
 func (bs *BarberShop) GetWaitingRoom() chan customer.Customer {
