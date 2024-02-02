@@ -1,12 +1,24 @@
 package barber_shop
 
+//go:generate mockgen -source=barber_shop.go -destination=./mocks/barber_shop.go
+
 import (
 	"fmt"
 	"sleeping-barber-dilemma/customer"
 	"sync/atomic"
 )
 
-type BarberShop struct {
+type BarberShop interface {
+	Open()
+	Close()
+	IsShopClose() bool
+	WaitTillAllBarberReturnsHome()
+	CustomerVisit(customer customer.Customer)
+	BarberReturnsToHome()
+	GetWaitingRoom() <-chan customer.Customer
+}
+
+type barberShop struct {
 	waitingRoom         chan customer.Customer
 	numberOfBarbers     int
 	barbers             []Barber
@@ -15,7 +27,7 @@ type BarberShop struct {
 }
 
 func NewBarberShop(numberOfSeats int, numberOfBarbers int) BarberShop {
-	return BarberShop{
+	return &barberShop{
 		waitingRoom:         make(chan customer.Customer, numberOfSeats),
 		numberOfBarbers:     numberOfBarbers,
 		barbers:             make([]Barber, numberOfBarbers),
@@ -23,7 +35,7 @@ func NewBarberShop(numberOfSeats int, numberOfBarbers int) BarberShop {
 	}
 }
 
-func (bs *BarberShop) Open() {
+func (bs *barberShop) Open() {
 	for i := 1; i <= bs.numberOfBarbers; i++ {
 		b := NewBarber(i, bs)
 		bs.barbers[i-1] = b
@@ -31,25 +43,25 @@ func (bs *BarberShop) Open() {
 	}
 }
 
-func (bs *BarberShop) Close() {
+func (bs *barberShop) Close() {
 	fmt.Println("Barbershop is closing now.")
 	close(bs.waitingRoom)
 	atomic.AddInt32(&bs.isShopClosed, int32(1))
 	fmt.Println("Barbershop is closed")
 }
 
-func (bs *BarberShop) IsShopClose() bool {
+func (bs *barberShop) IsShopClose() bool {
 	return atomic.LoadInt32(&bs.isShopClosed) != 0
 }
 
-func (bs *BarberShop) WaitTillAllBarberReturnsHome() {
+func (bs *barberShop) WaitTillAllBarberReturnsHome() {
 	for i := 0; i < bs.numberOfBarbers; i++ {
 		<-bs.barberReturningHome
 	}
 	fmt.Println("Barbershop is closed, haircut completed for all customers and all barbers have gone home.")
 }
 
-func (bs *BarberShop) CustomerVisit(customer customer.Customer) {
+func (bs *barberShop) CustomerVisit(customer customer.Customer) {
 	fmt.Printf("Customer %d entered barber shop\n", customer.GetCustomerId())
 	select {
 	case bs.waitingRoom <- customer:
@@ -59,10 +71,10 @@ func (bs *BarberShop) CustomerVisit(customer customer.Customer) {
 	}
 }
 
-func (bs *BarberShop) BarberReturnsToHome() {
+func (bs *barberShop) BarberReturnsToHome() {
 	bs.barberReturningHome <- true
 }
 
-func (bs *BarberShop) GetWaitingRoom() chan customer.Customer {
+func (bs *barberShop) GetWaitingRoom() <-chan customer.Customer {
 	return bs.waitingRoom
 }

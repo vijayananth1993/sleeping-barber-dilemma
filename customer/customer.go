@@ -1,25 +1,33 @@
 package customer
 
+//go:generate mockgen -source=customer.go -destination=./mocks/customer.go
+
 import "fmt"
 
-type Customer struct {
+type Customer interface {
+	WaitForHaircutToBeCompleted()
+	HaircutCompleted()
+	GetCustomerId() int
+}
+
+type customer struct {
 	id               int
 	haircutCompleted chan bool
 }
 
-func (c *Customer) WaitForHaircutToBeCompleted() {
+func (c *customer) WaitForHaircutToBeCompleted() {
 	<-c.haircutCompleted
 }
 
-func (c *Customer) HaircutCompleted() {
+func (c *customer) HaircutCompleted() {
 	fmt.Printf("Customer %d is leaving with a haircut\n", c.id)
 	c.haircutCompleted <- true
 }
 
-func (c *Customer) GetCustomerId() int {
+func (c *customer) GetCustomerId() int {
 	return c.id
 }
 
 func NewCustomer(id int) Customer {
-	return Customer{id: id, haircutCompleted: make(chan bool)}
+	return &customer{id: id, haircutCompleted: make(chan bool)}
 }
