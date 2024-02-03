@@ -25,11 +25,11 @@ func (b *barber) Work() {
 			b.haircutAllWaitingCustomers()
 			return
 		}
-		b.haircutOrGoToSleep()
+		b.haircutOrSleep()
 	}
 }
 
-func (b *barber) haircutOrGoToSleep() {
+func (b *barber) haircutOrSleep() {
 	select {
 	case c, ok := <-b.barberShop.GetWaitingRoom():
 		if ok {

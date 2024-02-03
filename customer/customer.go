@@ -29,5 +29,5 @@ func (c *customer) GetCustomerId() int {
 }
 
 func NewCustomer(id int) Customer {
-	return &customer{id: id, haircutCompleted: make(chan bool)}
+	return &customer{id: id, haircutCompleted: make(chan bool, 1)}
 }
