@@ -4,13 +4,14 @@ package barber_shop
 
 import (
 	"fmt"
+	"sleeping-barber-dilemma/constants"
 	"sleeping-barber-dilemma/customer"
 	"sync/atomic"
+	"time"
 )
 
 type BarberShop interface {
 	Open()
-	Close()
 	IsShopClose() bool
 	WaitTillAllBarberReturnsHome()
 	CustomerVisit(customer customer.Customer)
@@ -41,12 +42,16 @@ func (bs *barberShop) Open() {
 		bs.barbers[i-1] = b
 		go b.Work()
 	}
+	go func() {
+		time.Sleep(constants.ShopOperatingDuration)
+		bs.close()
+	}()
 }
 
-func (bs *barberShop) Close() {
+func (bs *barberShop) close() {
 	fmt.Println("Barbershop is closing now.")
-	close(bs.waitingRoom)
 	atomic.AddInt32(&bs.isShopClosed, int32(1))
+	close(bs.waitingRoom)
 	fmt.Println("Barbershop is closed")
 }
 

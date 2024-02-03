@@ -46,18 +46,6 @@ func (mr *MockBarberShopMockRecorder) BarberReturnsToHome() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BarberReturnsToHome", reflect.TypeOf((*MockBarberShop)(nil).BarberReturnsToHome))
 }
 
-// Close mocks base method.
-func (m *MockBarberShop) Close() {
-	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "Close")
-}
-
-// Close indicates an expected call of Close.
-func (mr *MockBarberShopMockRecorder) Close() *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockBarberShop)(nil).Close))
-}
-
 // CustomerVisit mocks base method.
 func (m *MockBarberShop) CustomerVisit(customer customer.Customer) {
 	m.ctrl.T.Helper()
