@@ -65,7 +65,7 @@ func (suite *BarberTestSuite) TestWork_WhenShopIsOpen_ShouldHaircutCustomersTill
 	suite.Len(suite.mockWaitingRoom, 0)
 }
 
-func (suite *BarberTestSuite) TestWork_WhenBarberIsSleepingAndCustomerArrives_ShouldAwake() {
+func (suite *BarberTestSuite) TestWork_WhenBarberIsSleepingAndCustomerArrives_ShouldAwakeAndHaircut() {
 
 	suite.mockBarberShop.EXPECT().IsShopClose().Return(false).Times(1)
 	suite.mockBarberShop.EXPECT().GetWaitingRoom().Return(suite.mockWaitingRoom).Times(1)
